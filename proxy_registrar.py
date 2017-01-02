@@ -10,6 +10,7 @@ from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 import os
 import os.path
+import hashlib
 
 class ProxyParser(ContentHandler):
 
@@ -35,9 +36,8 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
 
     def handle(self):
 
-        print('------- RECEIVED: -------')
-        rec_data = self.rfile.read().decode('utf-8')
-        print(rec_data.split(' '))
+        rec_data = self.rfile.read().decode('utf-8') #en todo lo recibido
+        #print(rec_data.split(' '))
                 
         print('\nClient sends us:\n' + rec_data)
        
@@ -50,11 +50,29 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                 print('Unauthorized REGISTER. Sending nonce...')
                 self.wfile.write(bytes(Aut_data, 'utf-8'))
                 
+            
+                
+                    
+                
+                
+                
+               
+                
                
             elif len(rec_data.split(' ')) > 4:
                 if rec_data.split(' ')[3][rec_data.split(' ')[3].find('A'):] \
-                   == 'Authorized:':
-                    print('hei')             
+                   == 'Authorization:':
+                   
+                        #Hacer comparacion responses----------------
+                    
+                    #print(rec_data.split(' '))
+                    resp = rec_data.split(' ')[-1][:rec_data.split(' ')\
+                           [-1].find('\r')]
+                    
+                    if resp == '8989898989898989':
+                        OK = 'SIP/2.0 200 OK'
+                        self.wfile.write(bytes(OK, 'utf-8'))   
+                        print('Authentication done. Sending OK...')             
                     
   
 
