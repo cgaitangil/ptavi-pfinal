@@ -7,6 +7,7 @@ from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 import os.path
 import os
+import hashlib
 
 class UAclient(ContentHandler):
     """
@@ -52,12 +53,18 @@ if __name__ == "__main__":
     try:
         config_file = LINE[0]
         method = LINE[1]
+        if method not in ['register', 'invite', 'bye']:
+            sys.exit('\nUsage: python3 uaclient.py config method option\n')  
+        elif method == 'register':
+            option = int(LINE[2])
+        else:
+            option = LINE[2]
     except:
         sys.exit('\nUsage: python3 uaclient.py config method option\n')
         
     # Verify that the config file exists
     if os.path.isfile(config_file):
-        print('\nConfigFile/Method: ', LINE, '\n')
+        print('\nConfigFile/Method/Option: ', LINE, '\n')
     else:
         sys.exit('\n' + '<' + config_file + '> File not found.' + '\n')
 #-------Error al meter parametros y si no encuentra el fichero hecho----
@@ -68,16 +75,40 @@ if __name__ == "__main__":
     parser.setContentHandler(TAGhandler)
     parser.parse(open(config_file))
     
-    
-    data = method.upper() + ' sip:' + TAGhandler.name + ':<PORT??> ' + 'SIP/2.0' 
-    
+    if method == 'register':
+        data = method.upper() + ' sip:' + TAGhandler.name + ':' \
+               + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
+               + str(option) + '\r\n\r\n' 
+        
     
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     my_socket.connect((TAGhandler.IPpr, int(TAGhandler.PORTpr)))
 
-    print('\n' + "Sending: " + data)
+    print('\n' + "Sending:\n" + data)
     my_socket.send(bytes(data, 'utf-8'))
+    
+    #Error conexion-----------------
+    #try:
+    rec_data = my_socket.recv(1024).decode('utf-8')
+    #except ConnectionRefusedError:
+    #    sys.exit('20101018160243 Error: No server listening at 127.0.0.1 port \
+    #              20000')
+                  
+    print('\nReceived:\n' + rec_data + '\n')
+    print(rec_data.split(' '))
+    
+    if rec_data.split(' ')[1] == '401':
+        nonce = rec_data.split(' ')[5][rec_data.split(' ')[5].find('"')+1:-1]
+        #We create a response:
+        m = hashlib.sha1(bytes(TAGhandler.passwd, 'utf-8'))
+        m.update(bytes(nonce, 'utf-8'))
+        response = m.digest()
+        print(m.hexdigest())
+        aut_reg = method.upper() + ' sip:' + TAGhandler.name + ':' \
+                  + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
+                  + str(option) + '\r\n\r\n' 
+        
 
 
 
