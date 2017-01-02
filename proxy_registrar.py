@@ -20,6 +20,7 @@ class ProxyParser(ContentHandler):
         self.PORTreg = ''
 
     def startElement(self, name, attrs):
+        ''' Attrs of XML file searcher '''
         
         if name == 'server':
             self.NAMEreg = attrs.get('name','')
@@ -34,8 +35,27 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
 
     def handle(self):
 
-        data = self.rfile.read().decode('utf-8')
-        print("Client sends us:  " + data + '\n')
+        print('------- RECEIVED: -------')
+        rec_data = self.rfile.read().decode('utf-8')
+        print(rec_data.split(' '))
+                
+        print('\nClient sends us:\n' + rec_data)
+       
+        if rec_data.split(' ')[0] == 'REGISTER':
+            if len(rec_data.split(' ')) <= 4:
+            
+                nonce = 8989898989898989
+                Aut_data = 'SIP/2.0 401 Unauthorized\r\nWWW Authenticate: ' \
+                           + 'Digest nonce="' + str(nonce) + '"'
+                print('Unauthorized REGISTER. Sending nonce...')
+                self.wfile.write(bytes(Aut_data, 'utf-8'))
+                
+               
+            elif len(rec_data.split(' ')) > 4:
+                if rec_data.split(' ')[3][rec_data.split(' ')[3].find('A'):] \
+                   == 'Authorized:':
+                    print('hei')             
+                    
   
 
 
@@ -49,7 +69,7 @@ if __name__ == "__main__":
         sys.exit('\nUsage: python3 proxy_registrar.py config\n')
         
     if os.path.isfile(config_file):
-        print('\nConfigFile: ', config_file, '\n')        
+        print('\nConfigFile:', config_file, '\n')        
     else:
         sys.exit('\n' + '<' + sys.argv[1] + '> File not found.' + '\n')
 #-------Error al meter parametros y si no encuentra el fichero hecho----
