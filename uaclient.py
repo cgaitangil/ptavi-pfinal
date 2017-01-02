@@ -75,39 +75,52 @@ if __name__ == "__main__":
     parser.setContentHandler(TAGhandler)
     parser.parse(open(config_file))
     
+    my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    my_socket.connect((TAGhandler.IPpr, int(TAGhandler.PORTpr)))
+    
     if method == 'register':
         data = method.upper() + ' sip:' + TAGhandler.name + ':' \
                + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
                + str(option) + '\r\n\r\n' 
         
+        print('\n' + "Sending:\n" + data)
+        my_socket.send(bytes(data, 'utf-8'))
     
-    my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    my_socket.connect((TAGhandler.IPpr, int(TAGhandler.PORTpr)))
-
-    print('\n' + "Sending:\n" + data)
-    my_socket.send(bytes(data, 'utf-8'))
-    
-    #Error conexion-----------------
-    #try:
-    rec_data = my_socket.recv(1024).decode('utf-8')
-    #except ConnectionRefusedError:
-    #    sys.exit('20101018160243 Error: No server listening at 127.0.0.1 port \
-    #              20000')
+        #Error conexion-----------------
+        #try:
+        rec_data = my_socket.recv(1024).decode('utf-8')
+        #except ConnectionRefusedError:
+        #sys.exit('20101018160243 Error: No server listening at 127.0.0.1 port \
+        #              20000')
                   
-    print('\nReceived:\n' + rec_data + '\n')
-    print(rec_data.split(' '))
+        print('\nReceived:\n' + rec_data + '\n')
+        print(rec_data.split(' '))
     
-    if rec_data.split(' ')[1] == '401':
-        nonce = rec_data.split(' ')[5][rec_data.split(' ')[5].find('"')+1:-1]
-        #We create a response:
-        m = hashlib.sha1(bytes(TAGhandler.passwd, 'utf-8'))
-        m.update(bytes(nonce, 'utf-8'))
-        response = m.digest()
-        print(m.hexdigest())
-        aut_reg = method.upper() + ' sip:' + TAGhandler.name + ':' \
-                  + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
-                  + str(option) + '\r\n\r\n' 
+        if rec_data.split(' ')[1] == '401':
+            nonce = rec_data.split(' ')[5][rec_data.split(' ')[5].find('"')\
+            +1:-1]
+            #We create a response:
+            m = hashlib.sha1(bytes(TAGhandler.passwd, 'utf-8'))
+            m.update(bytes(nonce, 'utf-8'))
+            response = m.digest()
+            print(m.hexdigest())
+            
+                #Comparar el response, envio un numero solo
+            response = 8989898989898989
+            aut_data = method.upper() + ' sip:' + TAGhandler.name + ':' \
+                       + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
+                       + str(option) + '\r\n' + 'Authorization: ' + \
+                       str(response) + '\r\n\r\n' 
+            print('\nSending authentication:\n' + aut_data)
+            my_socket.send(bytes(aut_data, 'utf-8')) #es el nonce del proxy
+            
+            print('Received:\n' + my_socket.recv(1024).decode('utf-8'))
+            
+            
+        
+        
+        
         
 
 
