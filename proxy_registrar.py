@@ -44,7 +44,9 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
     Users = {}
 
     def handle(self):
-
+        
+        #self.json2registered()
+        
         rec_data = self.rfile.read().decode('utf-8') #en todo lo recibido
         
         print('\nClient sends us:\n' + rec_data)
@@ -100,7 +102,10 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                                 m.update(bytes(str(nonce),'utf-8'))
                                 comp_response = m.hexdigest()
                                   
-                                #poner gm----------------
+                                expires = str(time.strftime('%Y-%m-%d %H:%M:%S'\
+                                                            ,time.gmtime\
+                                                            (time.time()))) +\
+                                                            ' +' + expires
                                 if resp == comp_response:
                                     OK = 'SIP/2.0 200 OK'
                                     self.wfile.write(bytes(OK, 'utf-8'))   
@@ -122,6 +127,15 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
         '''Update json file'''
 
         json.dump(self.Users, open('registered.json', 'w'), indent=4)
+        
+    def json2registered(self):
+        '''Loader json (users) file'''
+
+        with open('registered.json') as fich:
+            try:
+                self.Users = json.load(fich)
+            except:
+                pass
                         
 if __name__ == "__main__":
 
