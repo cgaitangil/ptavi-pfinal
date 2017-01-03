@@ -28,16 +28,16 @@ class UAclient(ContentHandler):
         if name == 'account':
             self.name = attrs.get('username','')
             self.passwd = attrs.get('passwd', '')
-            print('User:    ' + self.name + ' >< ' + self.passwd)
+            print('User:           ' + self.name + ' >< ' + self.passwd)
         elif name == 'uaserver':
             self.IPserv = attrs.get('ip','')
             self.PORTserv = attrs.get('puerto','')
-            print('Serving part:  ' + self.IPserv + ' >< ' + self.PORTserv)
+            print('Serving part:   ' + self.IPserv + ' >< ' + self.PORTserv)
       #  elif name == 'rtpaudio':
         elif name == 'regproxy':
             self.IPpr = attrs.get('ip','')
             self.PORTpr = attrs.get('puerto','')
-            print('Proxy:   ' + self.IPpr + ' >< ' + self.PORTpr)            
+            print('Proxy:          ' + self.IPpr + ' >< ' + self.PORTpr)
       #  elif name == 'log':
       #  elif name == 'audio':
         
@@ -94,20 +94,19 @@ if __name__ == "__main__":
         #sys.exit('20101018160243 Error: No server listening at 127.0.0.1 port \
         #              20000')
                   
-        print('\nReceived:\n' + rec_data + '\n')
-        print(rec_data.split(' '))
-    
+        print('Received:\n' + rec_data)
+            
         if rec_data.split(' ')[1] == '401':
             nonce = rec_data.split(' ')[5][rec_data.split(' ')[5].find('"')\
-            +1:-1]
+            +1:-5]
             #We create a response:
-            m = hashlib.sha1(bytes(TAGhandler.passwd, 'utf-8'))
-            m.update(bytes(nonce, 'utf-8'))
-            response = m.digest()
+            m = hashlib.sha1()
+            m.update(bytes(TAGhandler.passwd,'utf-8'))
+            m.update(bytes(nonce,'utf-8'))
+            response = m.hexdigest()
             print(m.hexdigest())
             
                 #Comparar el response, envio un numero solo
-            response = 8989898989898989
             aut_data = method.upper() + ' sip:' + TAGhandler.name + ':' \
                        + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
                        + str(option) + '\r\n' + 'Authorization: ' + \
@@ -117,7 +116,14 @@ if __name__ == "__main__":
             
             print('Received:\n' + my_socket.recv(1024).decode('utf-8'))
             
-            
+    if method == 'invite':
+        data = 'hola'
+        #method.upper() + ' sip:' + TAGhandler.name + ':' \
+         #      + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
+          #     + str(option) + '\r\n\r\n' 
+               
+        print('\n' + "Sending:\n" + data)
+        my_socket.send(bytes(data, 'utf-8'))
         
         
         
@@ -128,5 +134,5 @@ if __name__ == "__main__":
 
 
 
-    print('\nFinished socket\n')
+    print('\nFinished socket.\n')
     my_socket.close()    
