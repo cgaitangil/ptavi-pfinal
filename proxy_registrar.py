@@ -19,6 +19,8 @@ class ProxyParser(ContentHandler):
         self.NAMEreg = ''
         self.IPreg = ''        
         self.PORTreg = ''
+        #self.users 
+        self.psswds = ''
 
     def startElement(self, name, attrs):
         ''' Attrs of XML file searcher '''
@@ -29,55 +31,98 @@ class ProxyParser(ContentHandler):
             self.PORTreg = attrs.get('puerto', '')
             print('Server: ' + self.NAMEreg + ' >< ' + self.IPreg + ' >< '
                   + self.PORTreg)
-      #  elif name == 'database':        
+        elif name == 'database':
+            #self. = attrs.get('path', '')
+            self.psswds = attrs.get('passwdpath', '')       
       #  elif name == 'log':
       
-class ProxyReceivHandler(socketserver.DatagramRequestHandler):     
+class ProxyReceivHandler(socketserver.DatagramRequestHandler): 
+    '''
+    For each petition.
+    '''
+    
+    Users = {}
 
     def handle(self):
 
         rec_data = self.rfile.read().decode('utf-8') #en todo lo recibido
-        #print(rec_data.split(' '))
-                
+        
         print('\nClient sends us:\n' + rec_data)
        
         if rec_data.split(' ')[0] == 'REGISTER':
-            if len(rec_data.split(' ')) <= 4:
+        
+            nonce = 8989898989898989
             
-                nonce = 8989898989898989
-                Aut_data = 'SIP/2.0 401 Unauthorized\r\nWWW Authenticate: ' \
-                           + 'Digest nonce="' + str(nonce) + '"'
-                print('Unauthorized REGISTER. Sending nonce...')
-                self.wfile.write(bytes(Aut_data, 'utf-8'))
-                
-            
-                
+            ua = rec_data.split(' ')[1][4:rec_data.split(' ')[1].rfind(':')]
+            expires = rec_data.split(' ')[3][:rec_data.split(' ')\
+                      [3].find('\r')]
+                      
+            if expires == '0': 
+                try:
+                    del self.Users[ua]
                     
+                    
+                    self.wfile.write(b'User removed.')
+                except KeyError:
+                    print('Error: User to delete not found in REGISTER')
+                    self.wfile.write(b'Error: User to delete not found')
+                      
+                print('\n----------------------------------------')
+                print(rec_data.split(' '))
+                print(' ')
+                print(self.Users)
+                print('----------------------------------------\n')
+                    
+            else:
+            
+                if len(rec_data.split(' ')) <= 4:
+                    Aut_data = 'SIP/2.0 401 Unauthorized\r\nWWW ' +\
+                               'Authenticate: ' + 'Digest nonce="' +\
+                                str(nonce) + '"\r\n\r\n'
+                    print('Unauthorized REGISTER. Sending nonce...')
+                    self.wfile.write(bytes(Aut_data, 'utf-8'))
                 
+                elif len(rec_data.split(' ')) > 4:
                 
-                
-               
-                
-               
-            elif len(rec_data.split(' ')) > 4:
-                if rec_data.split(' ')[3][rec_data.split(' ')[3].find('A'):] \
-                   == 'Authorization:':
+                    if rec_data.split(' ')[3][rec_data.split(' ')[3].find('A')\
+                       :] == 'Authorization:':
                    
-                        #Hacer comparacion responses----------------
+                        resp = rec_data.split(' ')[-1][:rec_data.split(' ')\
+                               [-1].find('\r')]
                     
-                    #print(rec_data.split(' '))
-                    resp = rec_data.split(' ')[-1][:rec_data.split(' ')\
-                           [-1].find('\r')]
+                        f = open(TAGhandler.psswds, 'r')
+                        for line in f.readlines():
+                            if ua == line.split(':')[0]:
                     
-                    if resp == '8989898989898989':
-                        OK = 'SIP/2.0 200 OK'
-                        self.wfile.write(bytes(OK, 'utf-8'))   
-                        print('Authentication done. Sending OK...')             
-                    
+                                passwd = line.split(':')[1][:-1]
+                                m = hashlib.sha1()
+                                m.update(bytes(str(passwd),'utf-8'))
+                                m.update(bytes(str(nonce),'utf-8'))
+                                comp_response = m.hexdigest()
+                                  
+                                #poner gm----------------
+                                if resp == comp_response:
+                                    OK = 'SIP/2.0 200 OK'
+                                    self.wfile.write(bytes(OK, 'utf-8'))   
+                                    print('Authentication done. Sending OK...')
+                                    print('Adding User... ' + ua)
+                                    self.Users[ua] = {'address':\
+                                                      self.client_address[0],\
+                                                      'expires': expires}
   
+                    print('\n----------------------------------------')
+                    print(rec_data.split(' '))
+                    print(' ')
+                    print(self.Users)
+                    print('----------------------------------------\n')
+        
+        self.register2json()
+        
+    def register2json(self):
+        '''Update json file'''
 
-
-    
+        json.dump(self.Users, open('registered.json', 'w'), indent=4)
+                        
 if __name__ == "__main__":
 
 #------->
