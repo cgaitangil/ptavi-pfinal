@@ -29,7 +29,7 @@ class ProxyParser(ContentHandler):
             self.NAMEreg = attrs.get('name','')
             self.IPreg = attrs.get('ip', '')
             self.PORTreg = attrs.get('puerto', '')
-            print('Server: ' + self.NAMEreg + ' >< ' + self.IPreg + ' >< '
+            print('ServerProxy: ' + self.NAMEreg + ' >< ' + self.IPreg + ' >< '
                   + self.PORTreg)
         elif name == 'database':
             #self. = attrs.get('path', '')
@@ -45,7 +45,7 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
 
     def handle(self):
         
-        #self.json2registered()
+        self.json2registered()
         
         rec_data = self.rfile.read().decode('utf-8') #en todo lo recibido
         
@@ -62,12 +62,11 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
             if expires == '0': 
                 try:
                     del self.Users[ua]
-                    
-                    
+                    print('<' + ua + '> has been deleted.') 
                     self.wfile.write(b'User removed.')
                 except KeyError:
                     print('Error: User to delete not found in REGISTER')
-                    self.wfile.write(b'Error: User to delete not found')
+                    self.wfile.write(b'Error: User to delete not found\n')
                       
                 print('\n----------------------------------------')
                 print(rec_data.split(' '))
@@ -107,7 +106,7 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                                                             (time.time()))) +\
                                                             ' +' + expires
                                 if resp == comp_response:
-                                    OK = 'SIP/2.0 200 OK'
+                                    OK = 'SIP/2.0 200 OK\r\n\r\n'
                                     self.wfile.write(bytes(OK, 'utf-8'))   
                                     print('Authentication done. Sending OK...')
                                     print('Adding User... ' + ua)
@@ -119,6 +118,9 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                     print(rec_data.split(' '))
                     print(' ')
                     print(self.Users)
+                    for user in self.Users:
+                        print(user)
+                    
                     print('----------------------------------------\n')
         
         self.register2json()
