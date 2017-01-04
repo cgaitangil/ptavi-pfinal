@@ -106,24 +106,23 @@ if __name__ == "__main__":
             m.update(bytes(TAGhandler.passwd,'utf-8'))
             m.update(bytes(nonce,'utf-8'))
             response = m.hexdigest()
-            print(m.hexdigest())
             
                 #Comparar el response, envio un numero solo
             aut_data = method.upper() + ' sip:' + TAGhandler.name + ':' \
                        + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
                        + str(option) + '\r\n' + 'Authorization: ' + \
                        str(response) + '\r\n\r\n' 
-            print('\nSending authentication:\n' + aut_data)
+            print('Sending authentication:\n' + aut_data)
             my_socket.send(bytes(aut_data, 'utf-8')) #es el nonce del proxy
             
             print('Received:\n' + my_socket.recv(1024).decode('utf-8'))
             
     if method == 'invite':
-        data = 'hola'
-        #method.upper() + ' sip:' + TAGhandler.name + ':' \
-         #      + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
-          #     + str(option) + '\r\n\r\n' 
-               
+        
+        #body = 'v=0\r\no=' + 
+        data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n' +\
+               'Content-Type: application/sdp\r\n'
+               #se en via el option despues del sip, que es el correo
         print('\n' + "Sending:\n" + data)
         my_socket.send(bytes(data, 'utf-8'))
         
@@ -136,5 +135,5 @@ if __name__ == "__main__":
 
 
 
-    print('\nFinished socket.\n')
+    print('Finished socket.\n')
     my_socket.close()    
