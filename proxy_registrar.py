@@ -47,11 +47,12 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
         
         self.json2registered()
         
-        rec_data = self.rfile.read().decode('utf-8') #en todo lo recibido
+        rec_data = self.rfile.read().decode('utf-8') #all of received
         
         print('\nClient sends us:\n' + rec_data)
-       
-        if rec_data.split(' ')[0] == 'REGISTER':
+        
+        method = rec_data.split(' ')[0]
+        if method == 'REGISTER':
         
             nonce = 8989898989898989
             
@@ -76,10 +77,11 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                     
             else:
             
-                if len(rec_data.split(' ')) <= 4:
-                    Aut_data = 'SIP/2.0 401 Unauthorized\r\nWWW ' +\
+                Aut_data = 'SIP/2.0 401 Unauthorized\r\nWWW ' +\
                                'Authenticate: ' + 'Digest nonce="' +\
-                                str(nonce) + '"\r\n\r\n'
+                                str(nonce) + '"\r\n\r\n'             
+               
+                if len(rec_data.split(' ')) <= 4:                    
                     print('Unauthorized REGISTER. Sending nonce...')
                     self.wfile.write(bytes(Aut_data, 'utf-8'))
                 
@@ -112,7 +114,14 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                                     print('Adding User... ' + ua)
                                     self.Users[ua] = {'address':\
                                                       self.client_address[0],\
-                                                      'expires': expires}
+                                                      'expires': expires,\
+                                                      'port': \
+                                                      self.client_address[1]}
+                                                      
+                                else:
+                                    print('Unauthorized REGISTER.')
+                                    self.wfile.write(bytes(Aut_data, 'utf-8'))
+                                    
   
                     print('\n----------------------------------------')
                     print(rec_data.split(' '))
@@ -123,6 +132,47 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                     
                     print('----------------------------------------\n')
         
+        if method == 'INVITE':
+            client = rec_data.split(' ')[3][rec_data.split(' ')[3]\
+                                            .rfind('=')+1:]
+            server = rec_data.split(' ')[1][rec_data.split(' ')[1]
+                                            .find(':')+1:]
+            print(rec_data.split(' '))
+            print('Client:', client, '/ Server:', server)
+            
+            
+            ClReg = False
+            for user in self.Users:
+                if user == client:
+                    ClReg = True
+                    print('Sender registered')
+                    
+            if ClReg == False:
+                print('Sender no registered')
+                    
+                    
+            
+                
+            
+            
+            
+            
+            
+            
+            
+            
+            print('\n----------------------------------------')
+            print(rec_data.split(' '))
+            print(' ')
+            print(self.Users)
+            print('----------------------------------------\n')
+            
+            
+            
+            
+            
+            
+            
         self.register2json()
         
     def register2json(self):
