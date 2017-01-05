@@ -33,7 +33,8 @@ class UAclient(ContentHandler):
             self.IPserv = attrs.get('ip','')
             self.PORTserv = attrs.get('puerto','')
             print('Serving part:   ' + self.IPserv + ' >< ' + self.PORTserv)
-      #  elif name == 'rtpaudio':
+        elif name == 'rtpaudio':
+            self.PORTrtp = attrs.get('puerto', '')
         elif name == 'regproxy':
             self.IPpr = attrs.get('ip','')
             self.PORTpr = attrs.get('puerto','')
@@ -119,10 +120,11 @@ if __name__ == "__main__":
             
     if method == 'invite':
         
-        #body = 'v=0\r\no=' + 
+        body = 'v=0\r\no=' + TAGhandler.name + ' 127.0.0.1\r\ns=Session\r\n' +\
+               't=0\r\nm=audio ' + TAGhandler.PORTrtp + ' RTP\r\n\r\n'
         data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n' +\
-               'Content-Type: application/sdp\r\n'
-               #se en via el option despues del sip, que es el correo
+               'Content-Type: application/sdp\r\n\r\n' + body
+
         print('\n' + "Sending:\n" + data)
         my_socket.send(bytes(data, 'utf-8'))
         
