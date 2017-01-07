@@ -128,6 +128,10 @@ if __name__ == "__main__":
         print('\n' + "Sending:\n" + data)
         my_socket.send(bytes(data, 'utf-8'))
         
+        rec_data = my_socket.recv(1024).decode('utf-8')
+        
+        print('Received:\n' + rec_data)
+        
         
         
         
