@@ -66,8 +66,8 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                     print('<' + ua + '> has been deleted.') 
                     self.wfile.write(b'User removed.')
                 except KeyError:
-                    print('Error: User to delete not found in REGISTER')
-                    self.wfile.write(b'Error: User to delete not found\n')
+                    print('Error: User to delete not found. Sending 404...')
+                    self.wfile.write(b'SIP/2.0 404 User Not Found\r\n\r\n')
                       
                 print('\n----------------------------------------')
                 print(rec_data.split(' '))
@@ -127,9 +127,6 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                     print(rec_data.split(' '))
                     print(' ')
                     print(self.Users)
-                    for user in self.Users:
-                        print(user)
-                    
                     print('----------------------------------------\n')
         
         if method == 'INVITE':
@@ -137,18 +134,43 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                                             .rfind('=')+1:]
             server = rec_data.split(' ')[1][rec_data.split(' ')[1]
                                             .find(':')+1:]
-            print(rec_data.split(' '))
-            print('Client:', client, '/ Server:', server)
-            
+                                            
+            print('Client:', client, '/ Server:', server + '\n')
             
             ClReg = False
             for user in self.Users:
                 if user == client:
                     ClReg = True
-                    print('Sender registered')
+                    print('Invite sender <' + client + '> is registered.')
                     
             if ClReg == False:
-                print('Sender no registered')
+                print('Invite sender <' + client + '> is not registered.' +\
+                      ' Sending 404...')
+                self.wfile.write(b'SIP/2.0 404 User Not Found\r\n\r\n')
+                
+            else:
+                SerReg = False
+                for user in self.Users:
+                    if user == server:
+                        SerReg = True
+                        print('Invite receiver <' + server + '> is registered.')
+                        print('Resending invite...')
+                        self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
+                        my_socket = socket.socket(socket.AF_INET,\
+                                                  socket.SOCK_DGRAM)
+                        my_socket.setsockopt(socket.SOL_SOCKET,\
+                                             socket.SO_REUSEADDR, 1)
+                        my_socket.connect((self.Users[user]['address'],\
+                                           2222))
+ #Que puerto pongo antes en socket?????????? en vez del 2222
+                        my_socket.send(bytes(rec_data, 'utf-8'))
+                        
+                if SerReg == False:
+                    print('Invite receiver <' + server +\
+                          '> is not registered.' + ' Sending 404...')
+                    self.wfile.write(b'SIP/2.0 404 User Not Found\r\n\r\n')
+                        
+                
                     
                     
             
