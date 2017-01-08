@@ -33,7 +33,8 @@ class UAserver(ContentHandler):
             self.IPserv = attrs.get('ip','')
             self.PORTserv = attrs.get('puerto','')
             print('Serving part:   ' + self.IPserv + ' >< ' + self.PORTserv)
-      #  elif name == 'rtpaudio':
+        elif name == 'rtpaudio':
+            self.PORTrtp = attrs.get('puerto', '')
         elif name == 'regproxy':
             self.IPpr = attrs.get('ip','')
             self.PORTpr = attrs.get('puerto','')
@@ -53,6 +54,26 @@ class ServHandler(socketserver.DatagramRequestHandler):
         rec_data = self.rfile.read().decode('utf-8') #en todo lo recibido
         
         print('Received:\n' + rec_data)
+        
+        method = rec_data.split(' ')[0]
+        client = rec_data.split(' ')[1]
+        
+        Trying = 'SIP/2.0 100 Trying\r\n\r\n'
+        Ring = 'SIP/2.0 180 Ring\r\n\r\n'
+        OK = 'SIP/2.0 200 OK\r\nContent-Type: application/sdp\r\n\r\n' +\
+             'v=0\r\no=' + TAGhandler.name + ' 127.0.0.1\r\ns=Session\r\n' +\
+             't=0\r\nm=audio ' + TAGhandler.PORTrtp + ' RTP\r\n\r\n'
+        
+        if method == 'INVITE':
+            print('Sending Trying...\n')
+            self.wfile.write(bytes(Trying + Ring + OK, 'utf-8'))
+            
+        if method == 'ACK':
+            print('RTP---------------------')
+            
+        
+        #if method == 'BYE':
+        
 
 
 
@@ -85,6 +106,6 @@ if __name__ == "__main__":
     try:
         serv.serve_forever()
     except KeyboardInterrupt:
-        print(" ---> Finished Server.")
+        print(" ---> Finished User Agent Server.")
         
     
