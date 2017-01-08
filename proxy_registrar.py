@@ -155,22 +155,50 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                         SerReg = True
                         print('Invite receiver <' + server + '> is registered.')
                         print('Resending invite...')
-                        self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
+                        
                         my_socket = socket.socket(socket.AF_INET,\
                                                   socket.SOCK_DGRAM)
                         my_socket.setsockopt(socket.SOL_SOCKET,\
                                              socket.SO_REUSEADDR, 1)
-                        my_socket.connect((self.Users[user]['address'],\
-                                           2222))
- #Que puerto pongo antes en socket?????????? en vez del 2222
+                        if server == 'jesse@pinkman.com':
+                            my_socket.connect((self.Users[user]['address'],\
+                                               2222))
+                        if server == 'walter@white.com':
+                            my_socket.connect((self.Users[user]['address'],\
+                                               1112))
                         my_socket.send(bytes(rec_data, 'utf-8'))
+                        
+                        serv_resp = my_socket.recv(1024).decode('utf-8')
+                        print('\nReceived from ' + server + ':\n' + serv_resp)
+                        self.wfile.write(bytes(serv_resp, 'utf-8'))
+                        print('Resending to ' + client + ' ...')
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         
                 if SerReg == False:
                     print('Invite receiver <' + server +\
                           '> is not registered.' + ' Sending 404...')
                     self.wfile.write(b'SIP/2.0 404 User Not Found\r\n\r\n')
                         
-                
+        if method == 'ACK':
+            server = rec_data.split(' ')[1][4:]
+            
+            my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if server == 'jesse@pinkman.com':
+                my_socket.connect((self.Users[server]['address'], 2222))
+            if server == 'walter@white.com':
+                my_socket.connect((self.Users[server]['address'], 1112))
+            print('Resending ACK to ' + server +' ...')
+            my_socket.send(bytes(rec_data, 'utf-8'))
+            
+                    
                     
                     
             
