@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <config>
-    <account username='' passwd=''/>
-    <uaserver ip='' puerto=''/>
-    <rtpaudio puerto=''/>
-    <regproxy ip='' puerto=''/>
+    <account username='jesse@pinkman.com' passwd='654321'/>
+    <uaserver ip='127.0.0.1' puerto='2222'/>
+    <rtpaudio puerto='3332'/>
+    <regproxy ip='127.0.0.1' puerto='20000'/>
     <log path=''/>
     <audio path=''/>
 </config>
