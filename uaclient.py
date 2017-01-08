@@ -129,8 +129,20 @@ if __name__ == "__main__":
         my_socket.send(bytes(data, 'utf-8'))
         
         rec_data = my_socket.recv(1024).decode('utf-8')
-        
         print('Received:\n' + rec_data)
+        
+        if rec_data.split(' ')[1] == '100':
+            print('Sending ACK...')
+            my_socket.send(bytes('ACK sip:' + option + ' SIP/2.0\r\n\r\n',\
+                                 'utf-8'))
+                                 
+            print('RTP------------------------')
+                                 
+            print('\n----------------------------')
+            print(rec_data.split(' '))
+            print(len(rec_data.split(' ')))
+            print('----------------------------\n')
+            
         
         
         
