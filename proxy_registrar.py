@@ -77,7 +77,7 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                     
             else:
             
-                Aut_data = 'SIP/2.0 401 Unauthorized\r\nWWW ' +\
+                Aut_data = 'SIP/2.0 401 Unauthorized\r\nWWW-' +\
                                'Authenticate: ' + 'Digest nonce="' +\
                                 str(nonce) + '"\r\n\r\n'             
                
@@ -232,12 +232,13 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
         
     def json2registered(self):
         '''Loader json (users) file'''
-
-        with open('registered.json') as fich:
-            try:
+        
+        try:
+            with open('registered.json') as fich:
+            
                 self.Users = json.load(fich)
-            except:
-                pass
+        except:
+            pass
                         
 if __name__ == "__main__":
 
