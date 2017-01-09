@@ -20,8 +20,10 @@ class UAserver(ContentHandler):
         self.passwd = ''
         self.IPserv = ''
         self.PORTserv = ''
+        self.PORTrtp = ''
         self.IPpr = ''
         self.PORTpr = ''
+        self.audio = ''
 
     def startElement(self, name, attrs):
         
@@ -40,16 +42,17 @@ class UAserver(ContentHandler):
             self.PORTpr = attrs.get('puerto','')
             print('Proxy:          ' + self.IPpr + ' >< ' + self.PORTpr + '\n')
       #  elif name == 'log':
-      #  elif name == 'audio':
+        elif name == 'audio':
+            self.audio = attrs.get('path', '')
       
 class ServHandler(socketserver.DatagramRequestHandler): 
     '''
     For each petition.
     '''
     
+    rtp_user = []
+    
     def handle(self):
-        
-        #self.json2registered()
         
         rec_data = self.rfile.read().decode('utf-8') #en todo lo recibido
         
@@ -67,9 +70,23 @@ class ServHandler(socketserver.DatagramRequestHandler):
         if method == 'INVITE':
             print('Sending Trying...\n')
             self.wfile.write(bytes(Trying + Ring + OK, 'utf-8'))
+            print(rec_data.split(' '))
+            
+            rtp_port_to = rec_data.split(' ')[5] 
+            rtp_name_to = rec_data.split(' ')[3][rec_data.split(' ')[3]\
+                                                 .rfind('=')+1:]
+            self.rtp_user.append(rtp_port_to)
+            self.rtp_user.append(rtp_name_to)
             
         if method == 'ACK':
-            print('RTP---------------------')
+            
+            aEjecutar = 'mp32rtp -i 127.0.0.1 -p ' + self.rtp_user[0] +\
+                        ' < ' + TAGhandler.audio
+            os.system(aEjecutar)
+            print('\nSending ' + TAGhandler.audio + ' --> ' + aEjecutar)
+            
+            #Clean rtp list
+            self.rtp_user = []
             
         
         #if method == 'BYE':
