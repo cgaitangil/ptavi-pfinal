@@ -40,7 +40,9 @@ class UAclient(ContentHandler):
             self.PORTpr = attrs.get('puerto','')
             print('Proxy:          ' + self.IPpr + ' >< ' + self.PORTpr)
       #  elif name == 'log':
-      #  elif name == 'audio':
+        elif name == 'audio':
+            self.audio = attrs.get('path', '')
+            print('Audio file:     ' + self.audio)
         
         
         
@@ -100,8 +102,8 @@ if __name__ == "__main__":
         print('Received:\n' + rec_data)
             
         if rec_data.split(' ')[1] == '401':
-            nonce = rec_data.split(' ')[5][rec_data.split(' ')[5].find('"')\
-            +1:-5]
+            print(rec_data.split('"'))
+            nonce = rec_data.split('"')[1]
             #We create a response:
             m = hashlib.sha1()
             m.update(bytes(TAGhandler.passwd,'utf-8'))
@@ -136,7 +138,14 @@ if __name__ == "__main__":
             my_socket.send(bytes('ACK sip:' + option + ' SIP/2.0\r\n\r\n',\
                                  'utf-8'))
                                  
-            print('RTP------------------------')
+            rtp_to = rec_data.split(' ')[9]
+            print(rtp_to)
+            
+            aEjecutar = 'mp32rtp -i 127.0.0.1 -p ' + rtp_to + ' < ' +\
+                       TAGhandler.audio
+            os.system(aEjecutar)
+            print('\nSending ' + rtp_to + ' --> ' + aEjecutar)
+            
                                  
             print('\n----------------------------')
             print(rec_data.split(' '))
