@@ -8,6 +8,7 @@ from xml.sax.handler import ContentHandler
 import os.path
 import os
 import hashlib
+import time
 
 
 class UAclient(ContentHandler):
@@ -23,6 +24,7 @@ class UAclient(ContentHandler):
         self.PORTserv = ''
         self.IPpr = ''
         self.PORTpr = ''
+        self.log = ''
 
     def startElement(self, name, attrs):
 
@@ -40,10 +42,27 @@ class UAclient(ContentHandler):
             self.IPpr = attrs.get('ip', '')
             self.PORTpr = attrs.get('puerto', '')
             print('Proxy:          ' + self.IPpr + ' >< ' + self.PORTpr)
-        # elif name == 'log':
+        elif name == 'log':
+            self.log = attrs.get('path', '')
+            print('Log file:       ' + self.log)
         elif name == 'audio':
             self.audio = attrs.get('path', '')
             print('Audio file:     ' + self.audio)
+
+
+def log(config, text):
+    """Event logging method."""
+
+    with open(config.log, 'a') as f:
+        if text[0] == '-':
+            now = time.strftime('%Y%m%d%H%M%S', time.gmtime(time.time()))
+            text = text.replace('\r\n', ' ') + '\r\n'
+            f.write(text)
+        else:
+            now = time.strftime('%Y%m%d%H%M%S', time.gmtime(time.time()))
+            text = now + ' ' + text.replace('\r\n', ' ') + '\r\n'
+            f.write(text)
+
 
 if __name__ == "__main__":
 
@@ -82,17 +101,34 @@ if __name__ == "__main__":
                + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
                + str(option) + '\r\n\r\n'
 
+        # log:
+        text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr + ': ' +\
+               data
+        log(TAGhandler, text)
+
         print('\n' + "Sending:\n" + data)
         my_socket.send(bytes(data, 'utf-8'))
 
-        # Error conexion-----------------
-        # try:
-        rec_data = my_socket.recv(1024).decode('utf-8')
-        # except ConnectionRefusedError:
-        # sys.exit('20101018160243 Error: No server listening at 127.0.0.1 port
-        # 20000')
+        # Error conexion------------------------------en todoooooooooooooo
+        try:
+            rec_data = my_socket.recv(1024).decode('utf-8')
+        except ConnectionRefusedError:
+            # log:
+            text = 'Error: 20101018160243 Error: No server listening at ' +\
+                   '127.0.0.1 port 20000'
+            log(TAGhandler, text)
+            text = '--------------------------------------------'
+            log(TAGhandler, text)
+
+            sys.exit('20101018160243 Error: No server listening at ' +
+                     '127.0.0.1 port 20000')
 
         print('Received:\n' + rec_data)
+
+        # log:
+        text = 'Received from ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
+               ': ' + rec_data
+        log(TAGhandler, text)
 
         if rec_data.split(' ')[1] == '401':
             print(rec_data.split('"'))
@@ -110,38 +146,95 @@ if __name__ == "__main__":
             print('Sending authentication:\n' + aut_data)
             my_socket.send(bytes(aut_data, 'utf-8'))
 
-            print('Received:\n' + my_socket.recv(1024).decode('utf-8'))
+            # log:
+            text = 'Sent to ' + TAGhandler.IPpr + ':' +\
+                   TAGhandler.PORTpr + ': ' + aut_data
+            log(TAGhandler, text)
+
+            rec_data = my_socket.recv(1024).decode('utf-8')
+            print('Received:\n' + rec_data)
+
+            # log:
+            text = 'Received from ' + TAGhandler.IPpr + ':' +\
+                   TAGhandler.PORTpr + ': ' + rec_data
+            log(TAGhandler, text)
+
+        # log:
+        text = '--------------------------------------------'
+        log(TAGhandler, text)
 
     if method == 'invite':
 
-        body = 'v=0\r\no=' + TAGhandler.name + ' 127.0.0.1\r\ns=Session\r\n' +\
-               't=0\r\nm=audio ' + TAGhandler.PORTrtp + ' RTP\r\n\r\n'
+        body = 'v=0\r\no=' + TAGhandler.name + ' 127.0.0.1\r\ns=session\r\n' +\
+               't=0\r\nm=audio ' + TAGhandler.PORTrtp + ' RTP\r\n'
         data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n' +\
             'Content-Type: application/sdp\r\n\r\n' + body
 
         print('\n' + "Sending:\n" + data)
         my_socket.send(bytes(data, 'utf-8'))
 
+        # log:
+        text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr + ': ' +\
+               data
+        log(TAGhandler, text)
+
         rec_data = my_socket.recv(1024).decode('utf-8')
         print('Received:\n' + rec_data)
+
+        # log:
+        text = 'Received from ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
+               ': ' + rec_data
+        log(TAGhandler, text)
 
         if rec_data.split(' ')[1] == '100':
             print('Sending ACK...')
             my_socket.send(bytes('ACK sip:' + option + ' SIP/2.0\r\n\r\n',
                                  'utf-8'))
 
+            # log:
+            text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
+                   ': ' + 'ACK sip:' + option + ' SIP/2.0\r\n\r\n'
+            log(TAGhandler, text)
+
             rtp_to = rec_data.split(' ')[9]
             print(rtp_to)
 
-            aEjecutar = 'mp32rtp -i 127.0.0.1 -p ' + rtp_to + ' < ' +\
+            aEjecutar = './mp32rtp -i 127.0.0.1 -p ' + rtp_to + ' < ' +\
                 TAGhandler.audio
             os.system(aEjecutar)
             print('\nSending ' + rtp_to + ' --> ' + aEjecutar)
 
+            # log:
+            text = 'Sending to 127.0.0.1:' + rtp_to + ' audio file <' +\
+                   TAGhandler.audio + '>'
+            log(TAGhandler, text)
+            text = '--------------------------------------------'
+            log(TAGhandler, text)
+
             print('\n----------------------------')
             print(rec_data.split(' '))
-            print(len(rec_data.split(' ')))
             print('----------------------------\n')
+
+    if method == 'bye':
+        data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n\r\n'
+        print('\n' + "Sending:\n" + data)
+        my_socket.send(bytes(data, 'utf-8'))
+        # os.system('killall mp32rtp 2> /dev/null')-- paramos el envio rtp----
+
+        # log:
+        text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
+               ': ' + data
+        log(TAGhandler, text)
+
+        rec_data = my_socket.recv(1024).decode('utf-8')
+        print('Received:\n' + rec_data)
+
+        # log:
+        text = 'Received from ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
+               ': ' + rec_data
+        log(TAGhandler, text)
+        text = '--------------------------------------------'
+        log(TAGhandler, text)
 
     print('Finished socket.\n')
     my_socket.close()
