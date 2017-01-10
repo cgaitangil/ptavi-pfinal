@@ -66,8 +66,8 @@ class ServHandler(socketserver.DatagramRequestHandler):
         Trying = 'SIP/2.0 100 Trying\r\n\r\n'
         Ring = 'SIP/2.0 180 Ring\r\n\r\n'
         OK = 'SIP/2.0 200 OK\r\nContent-Type: application/sdp\r\n\r\n' +\
-             'v=0\r\no=' + TAGhandler.name + ' 127.0.0.1\r\ns=Session\r\n' +\
-             't=0\r\nm=audio ' + TAGhandler.PORTrtp + ' RTP\r\n\r\n'
+             'v=0\r\no=' + TAGhandler.name + ' 127.0.0.1\r\ns=session\r\n' +\
+             't=0\r\nm=audio ' + TAGhandler.PORTrtp + ' RTP\r\n'
 
         if method == 'INVITE':
             print('Sending Trying...\n')
@@ -82,15 +82,20 @@ class ServHandler(socketserver.DatagramRequestHandler):
 
         if method == 'ACK':
 
-            aEjecutar = 'mp32rtp -i 127.0.0.1 -p ' + self.rtp_user[0] +\
+            aEjecutar = './mp32rtp -i 127.0.0.1 -p ' + self.rtp_user[0] +\
                         ' < ' + TAGhandler.audio
             os.system(aEjecutar)
             print('\nSending ' + TAGhandler.audio + ' --> ' + aEjecutar)
 
             # Clean rtp list
+            print(self.rtp_user)
             self.rtp_user = []
 
-        # if method == 'BYE':
+        if method == 'BYE':
+            print('Sending OK...\n')
+            self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
+            # acabar rtp-----------------------------------------------------
+
 
 if __name__ == "__main__":
 
