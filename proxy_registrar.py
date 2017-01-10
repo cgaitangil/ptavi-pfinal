@@ -52,6 +52,7 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
         rec_data = self.rfile.read().decode('utf-8')
 
         print('\nClient sends us:\n' + rec_data)
+        print(rec_data.split(' '))
 
         method = rec_data.split(' ')[0]
         if method == 'REGISTER':
@@ -66,7 +67,7 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
                 try:
                     del self.Users[ua]
                     print('<' + ua + '> has been deleted.')
-                    self.wfile.write(b'User removed.')
+                    self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n.')
                 except KeyError:
                     print('Error: User to delete not found. Sending 404...')
                     self.wfile.write(b'SIP/2.0 404 User Not Found\r\n\r\n')
@@ -198,6 +199,32 @@ class ProxyReceivHandler(socketserver.DatagramRequestHandler):
             print(' ')
             print(self.Users)
             print('----------------------------------------\n')
+
+        if method == 'BYE':
+            server = rec_data.split(' ')[1][4:]
+            SerReg = False
+            for user in self.Users:
+                if user == server:
+                    SerReg = True
+                    my_socket = socket.socket(socket.AF_INET,
+                                              socket.SOCK_DGRAM)
+                    my_socket.setsockopt(socket.SOL_SOCKET,
+                                         socket.SO_REUSEADDR, 1)
+                    if server == 'jesse@pinkman.com':
+                        my_socket.connect((self.Users[user]['address'],
+                                           2222))
+                    if server == 'walter@white.com':
+                        my_socket.connect((self.Users[user]['address'],
+                                           1112))
+                    my_socket.send(bytes(rec_data, 'utf-8'))
+                    serv_resp = my_socket.recv(1024).decode('utf-8')
+                    print('\nReceived from ' + server + ':\n' + serv_resp)
+                    self.wfile.write(bytes(serv_resp, 'utf-8'))
+
+            if SerReg is False:
+                print('Invite receiver <' + server +
+                      '> is not registered.' + ' Sending 404...')
+                self.wfile.write(b'SIP/2.0 404 User Not Found\r\n\r\n')
 
         self.register2json()
 
