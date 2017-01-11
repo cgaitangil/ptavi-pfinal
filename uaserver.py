@@ -72,7 +72,6 @@ class ServHandler(socketserver.DatagramRequestHandler):
         if method == 'INVITE':
             print('Sending Trying...\n')
             self.wfile.write(bytes(Trying + Ring + OK, 'utf-8'))
-            print(rec_data.split(' '))
 
             rtp_port_to = rec_data.split(' ')[5]
             rtp_name_to = rec_data.split(' ')[3][rec_data.split(' ')[3]
@@ -85,16 +84,14 @@ class ServHandler(socketserver.DatagramRequestHandler):
             aEjecutar = './mp32rtp -i 127.0.0.1 -p ' + self.rtp_user[0] +\
                         ' < ' + TAGhandler.audio
             os.system(aEjecutar)
-            print('\nSending ' + TAGhandler.audio + ' --> ' + aEjecutar)
+            print('Sending ' + TAGhandler.audio + ' --> ' + aEjecutar)
 
             # Clean rtp list
-            print(self.rtp_user)
             self.rtp_user = []
 
         if method == 'BYE':
             print('Sending OK...\n')
             self.wfile.write(b'SIP/2.0 200 OK\r\n\r\n')
-            # acabar rtp-----------------------------------------------------
 
 
 if __name__ == "__main__":
