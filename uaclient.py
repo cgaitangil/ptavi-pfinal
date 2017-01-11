@@ -84,7 +84,6 @@ if __name__ == "__main__":
         print('\nConfigFile/Method/Option: ', LINE, '\n')
     else:
         sys.exit('\n' + '<' + config_file + '> File not found.' + '\n')
-# -------Error al meter parametros y si no encuentra el fichero hecho----
 
     # XML data searcher
     parser = make_parser()
@@ -95,60 +94,81 @@ if __name__ == "__main__":
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     my_socket.connect((TAGhandler.IPpr, int(TAGhandler.PORTpr)))
+    try:
+        if method == 'register':
 
-    if method == 'register':
-        data = method.upper() + ' sip:' + TAGhandler.name + ':' \
-               + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
-               + str(option) + '\r\n\r\n'
-
-        # log:
-        text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr + ': ' +\
-               data
-        log(TAGhandler, text)
-
-        print('\n' + "Sending:\n" + data)
-        my_socket.send(bytes(data, 'utf-8'))
-
-        # Error conexion------------------------------en todoooooooooooooo
-        try:
-            rec_data = my_socket.recv(1024).decode('utf-8')
-        except ConnectionRefusedError:
             # log:
-            text = 'Error: 20101018160243 Error: No server listening at ' +\
-                   '127.0.0.1 port 20000'
+            text = 'Starting...'
             log(TAGhandler, text)
+
+            data = method.upper() + ' sip:' + TAGhandler.name + ':' \
+                + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
+                + str(option) + '\r\n\r\n'
+
+            # log:
+            text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
+                ': ' + data
+            log(TAGhandler, text)
+
+            print('\n' + "Sending:\n" + data)
+            my_socket.send(bytes(data, 'utf-8'))
+
+            rec_data = my_socket.recv(1024).decode('utf-8')
+
+            print('Received:\n' + rec_data)
+
+            # log:
+            text = 'Received from ' + TAGhandler.IPpr + ':' +\
+                TAGhandler.PORTpr + ': ' + rec_data
+            log(TAGhandler, text)
+
+            if rec_data.split(' ')[1] == '401':
+
+                nonce = rec_data.split('"')[1]
+                # We create a response:
+                m = hashlib.sha1()
+                m.update(bytes(TAGhandler.passwd, 'utf-8'))
+                m.update(bytes(nonce, 'utf-8'))
+                response = m.hexdigest()
+
+                aut_data = method.upper() + ' sip:' + TAGhandler.name + ':' \
+                    + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
+                    + str(option) + '\r\n' + 'Authorization: ' + \
+                    str(response) + '\r\n\r\n'
+                print('Sending authentication:\n' + aut_data)
+                my_socket.send(bytes(aut_data, 'utf-8'))
+
+                # log:
+                text = 'Sent to ' + TAGhandler.IPpr + ':' +\
+                       TAGhandler.PORTpr + ': ' + aut_data
+                log(TAGhandler, text)
+
+                rec_data = my_socket.recv(1024).decode('utf-8')
+                print('Received:\n' + rec_data)
+
+                # log:
+                text = 'Received from ' + TAGhandler.IPpr + ':' +\
+                       TAGhandler.PORTpr + ': ' + rec_data
+                log(TAGhandler, text)
+
+            # log:
             text = '--------------------------------------------'
             log(TAGhandler, text)
 
-            sys.exit('20101018160243 Error: No server listening at ' +
-                     '127.0.0.1 port 20000')
+        if method == 'invite':
 
-        print('Received:\n' + rec_data)
+            body = 'v=0\r\no=' + TAGhandler.name +\
+                   ' 127.0.0.1\r\ns=session\r\n' + 't=0\r\nm=audio ' +\
+                   TAGhandler.PORTrtp + ' RTP\r\n'
+            data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n' +\
+                'Content-Type: application/sdp\r\n\r\n' + body
 
-        # log:
-        text = 'Received from ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
-               ': ' + rec_data
-        log(TAGhandler, text)
-
-        if rec_data.split(' ')[1] == '401':
-            print(rec_data.split('"'))
-            nonce = rec_data.split('"')[1]
-            # We create a response:
-            m = hashlib.sha1()
-            m.update(bytes(TAGhandler.passwd, 'utf-8'))
-            m.update(bytes(nonce, 'utf-8'))
-            response = m.hexdigest()
-
-            aut_data = method.upper() + ' sip:' + TAGhandler.name + ':' \
-                + TAGhandler.PORTserv + ' SIP/2.0\r\n' + 'Expires: ' \
-                + str(option) + '\r\n' + 'Authorization: ' + \
-                str(response) + '\r\n\r\n'
-            print('Sending authentication:\n' + aut_data)
-            my_socket.send(bytes(aut_data, 'utf-8'))
+            print('\n' + "Sending:\n" + data)
+            my_socket.send(bytes(data, 'utf-8'))
 
             # log:
             text = 'Sent to ' + TAGhandler.IPpr + ':' +\
-                   TAGhandler.PORTpr + ': ' + aut_data
+                   TAGhandler.PORTpr + ': ' + data
             log(TAGhandler, text)
 
             rec_data = my_socket.recv(1024).decode('utf-8')
@@ -159,82 +179,63 @@ if __name__ == "__main__":
                    TAGhandler.PORTpr + ': ' + rec_data
             log(TAGhandler, text)
 
-        # log:
-        text = '--------------------------------------------'
-        log(TAGhandler, text)
+            if rec_data.split(' ')[1] == '100':
+                print('Sending ACK...')
+                my_socket.send(bytes('ACK sip:' + option + ' SIP/2.0\r\n\r\n',
+                                     'utf-8'))
 
-    if method == 'invite':
+                # log:
+                text = 'Sent to ' + TAGhandler.IPpr + ':' +\
+                       TAGhandler.PORTpr + ': ' + 'ACK sip:' + option +\
+                       ' SIP/2.0\r\n\r\n'
+                log(TAGhandler, text)
 
-        body = 'v=0\r\no=' + TAGhandler.name + ' 127.0.0.1\r\ns=session\r\n' +\
-               't=0\r\nm=audio ' + TAGhandler.PORTrtp + ' RTP\r\n'
-        data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n' +\
-            'Content-Type: application/sdp\r\n\r\n' + body
+                rtp_to = rec_data.split(' ')[9]
 
-        print('\n' + "Sending:\n" + data)
-        my_socket.send(bytes(data, 'utf-8'))
+                aEjecutar = './mp32rtp -i 127.0.0.1 -p ' + rtp_to + ' < ' +\
+                    TAGhandler.audio
+                os.system(aEjecutar)
+                print('\nSending ' + rtp_to + ' --> ' + aEjecutar + '\n')
 
-        # log:
-        text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr + ': ' +\
-               data
-        log(TAGhandler, text)
+                # log:
+                text = 'Sending to 127.0.0.1:' + rtp_to + ' audio file <' +\
+                       TAGhandler.audio + '>'
+                log(TAGhandler, text)
+                text = '--------------------------------------------'
+                log(TAGhandler, text)
 
-        rec_data = my_socket.recv(1024).decode('utf-8')
-        print('Received:\n' + rec_data)
-
-        # log:
-        text = 'Received from ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
-               ': ' + rec_data
-        log(TAGhandler, text)
-
-        if rec_data.split(' ')[1] == '100':
-            print('Sending ACK...')
-            my_socket.send(bytes('ACK sip:' + option + ' SIP/2.0\r\n\r\n',
-                                 'utf-8'))
+        if method == 'bye':
+            data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n\r\n'
+            print('\n' + "Sending:\n" + data)
+            my_socket.send(bytes(data, 'utf-8'))
 
             # log:
             text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
-                   ': ' + 'ACK sip:' + option + ' SIP/2.0\r\n\r\n'
+                   ': ' + data
             log(TAGhandler, text)
 
-            rtp_to = rec_data.split(' ')[9]
-            print(rtp_to)
-
-            aEjecutar = './mp32rtp -i 127.0.0.1 -p ' + rtp_to + ' < ' +\
-                TAGhandler.audio
-            os.system(aEjecutar)
-            print('\nSending ' + rtp_to + ' --> ' + aEjecutar)
+            rec_data = my_socket.recv(1024).decode('utf-8')
+            print('Received:\n' + rec_data)
 
             # log:
-            text = 'Sending to 127.0.0.1:' + rtp_to + ' audio file <' +\
-                   TAGhandler.audio + '>'
+            text = 'Received from ' + TAGhandler.IPpr + ':' +\
+                   TAGhandler.PORTpr + ': ' + rec_data
+            log(TAGhandler, text)
+            text = '--------------------------------------------'
+            log(TAGhandler, text)
+            text = 'Finishing.'
             log(TAGhandler, text)
             text = '--------------------------------------------'
             log(TAGhandler, text)
 
-            print('\n----------------------------')
-            print(rec_data.split(' '))
-            print('----------------------------\n')
-
-    if method == 'bye':
-        data = method.upper() + ' sip:' + option + ' SIP/2.0\r\n\r\n'
-        print('\n' + "Sending:\n" + data)
-        my_socket.send(bytes(data, 'utf-8'))
-        # os.system('killall mp32rtp 2> /dev/null')-- paramos el envio rtp----
-
-        # log:
-        text = 'Sent to ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
-               ': ' + data
-        log(TAGhandler, text)
-
-        rec_data = my_socket.recv(1024).decode('utf-8')
-        print('Received:\n' + rec_data)
-
-        # log:
-        text = 'Received from ' + TAGhandler.IPpr + ':' + TAGhandler.PORTpr +\
-               ': ' + rec_data
+        print('Finished socket.\n')
+        my_socket.close()
+    except:
+        text = 'Error: 20101018160243 Error: No server listening at ' +\
+                   '127.0.0.1 port 20000'
         log(TAGhandler, text)
         text = '--------------------------------------------'
         log(TAGhandler, text)
 
-    print('Finished socket.\n')
-    my_socket.close()
+        sys.exit('20101018160243 Error: No server listening at ' +
+                 '127.0.0.1 port 20000')
