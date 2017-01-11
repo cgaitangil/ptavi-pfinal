@@ -1,1 +1,1 @@
-Reestablecer los usuarios conectados
+Reestablecer usuarios conectados
